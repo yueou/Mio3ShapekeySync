@@ -1,6 +1,9 @@
 import bpy
 from bpy.types import Panel, PropertyGroup, PointerProperty, UIList, Collection, Object
 from bpy.props import PointerProperty
+import time
+import _thread
+import traceback
 
 bl_info = {
     "name": "Mio3 ShapeKeySync",
@@ -49,6 +52,9 @@ class VIEW3D_PT_Mio3sksync(Panel):
         return (context.object is not None and context.object.type in {'MESH', 'CURVE', 'SURFACE', 'LATTICE', 'SURFACE'})
 
     def draw(self, context):
+        global SHAPEKEY_SYNC_LIST
+        global SHAPEKEY_SYNC_VALUE
+
         obj = context.object
 
         layout = self.layout
@@ -74,7 +80,9 @@ class VIEW3D_PT_Mio3sksync(Panel):
                             collection_keys.append(ckey.name)
                             if (cobj != context.object):
                                 if (ckey.name in dat.shape_keys.key_blocks and ckey.value != dat.shape_keys.key_blocks[ckey.name].value):
-                                    ckey.value = dat.shape_keys.key_blocks[ckey.name].value
+                                    #ckey.value = dat.shape_keys.key_blocks[ckey.name].value
+                                    SHAPEKEY_SYNC_VALUE = dat.shape_keys.key_blocks[ckey.name].value
+                                    SHAPEKEY_SYNC_LIST.append(ckey) 
 
             row = layout.row()
             row.label(text="Local:" + str(len(context.object.data.shape_keys.key_blocks)))
@@ -98,11 +106,24 @@ def register():
         bpy.utils.register_class(c)
     Object.mio3sksync = PointerProperty(type=MIO3SKSYNC_Props)
 
+    try:
+        _thread.start_new_thread( thread_sync_shapekey, ("Thread-ShapekeySync",0.1) )
+    except:
+        print ("Error: Can't create Thread-hapekeySync")
+        traceback.print_exc()
+
 
 def unregister():
+    global THREAD_STOP
+    global SHAPEKEY_SYNC_LIST
+    
     del Object.mio3sksync
     for c in classes:
         bpy.utils.unregister_class(c)
+
+    THREAD_STOP = True
+    SHAPEKEY_SYNC_LIST.clear()
+
 
 
 if __name__ == "__main__":
