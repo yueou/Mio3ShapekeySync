@@ -125,6 +125,27 @@ def unregister():
     SHAPEKEY_SYNC_LIST.clear()
 
 
+SHAPEKEY_SYNC_LIST = []
+SHAPEKEY_SYNC_VALUE = 0
+THREAD_STOP = False
+
+def thread_sync_shapekey(threadName, delay):
+    print ("Thread-ShapekeySync Started")
+    while not THREAD_STOP:
+
+        time.sleep(delay)
+        if len(SHAPEKEY_SYNC_LIST) > 0:
+            try:
+                sync_shapekey()
+                SHAPEKEY_SYNC_LIST.clear()
+            except:
+                print ("Error: Thread Conflict")
+            
+    print ("Thread-ShapekeySync Stoped")
+
+def sync_shapekey():
+    for shapekey in SHAPEKEY_SYNC_LIST: 
+        shapekey.value = SHAPEKEY_SYNC_VALUE
 
 if __name__ == "__main__":
     register()
